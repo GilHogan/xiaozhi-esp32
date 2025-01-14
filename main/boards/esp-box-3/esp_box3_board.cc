@@ -14,6 +14,7 @@
 #include <driver/spi_common.h>
 #include <wifi_station.h>
 
+#include "esp_lcd_st7735s.h"
 #define TAG "EspBox3Board"
 
 // Init ili9341 by custom cmd
@@ -62,9 +63,9 @@ private:
 
     void InitializeSpi() {
         spi_bus_config_t buscfg = {};
-        buscfg.mosi_io_num = GPIO_NUM_6;
+        buscfg.mosi_io_num = GPIO_NUM_18;
         buscfg.miso_io_num = GPIO_NUM_NC;
-        buscfg.sclk_io_num = GPIO_NUM_7;
+        buscfg.sclk_io_num = GPIO_NUM_17;
         buscfg.quadwp_io_num = GPIO_NUM_NC;
         buscfg.quadhd_io_num = GPIO_NUM_NC;
         buscfg.max_transfer_sz = DISPLAY_WIDTH * DISPLAY_HEIGHT * sizeof(uint16_t);
@@ -81,15 +82,15 @@ private:
         });
     }
 
-    void InitializeIli9341Display() {
+    void InitializeSt7735sDisplay() {
         esp_lcd_panel_io_handle_t panel_io = nullptr;
         esp_lcd_panel_handle_t panel = nullptr;
 
         // 液晶屏控制IO初始化
         ESP_LOGD(TAG, "Install panel IO");
         esp_lcd_panel_io_spi_config_t io_config = {};
-        io_config.cs_gpio_num = GPIO_NUM_5;
-        io_config.dc_gpio_num = GPIO_NUM_4;
+        io_config.cs_gpio_num = GPIO_NUM_16;
+        io_config.dc_gpio_num = GPIO_NUM_8;
         io_config.spi_mode = 0;
         io_config.pclk_hz = 40 * 1000 * 1000;
         io_config.trans_queue_depth = 10;
@@ -99,22 +100,22 @@ private:
 
         // 初始化液晶屏驱动芯片
         ESP_LOGD(TAG, "Install LCD driver");
-        const ili9341_vendor_config_t vendor_config = {
-            .init_cmds = &vendor_specific_init[0],
-            .init_cmds_size = sizeof(vendor_specific_init) / sizeof(ili9341_lcd_init_cmd_t),
-        };
+        // const ili9341_vendor_config_t vendor_config = {
+        //     .init_cmds = &vendor_specific_init[0],
+        //     .init_cmds_size = sizeof(vendor_specific_init) / sizeof(ili9341_lcd_init_cmd_t),
+        // };
 
         esp_lcd_panel_dev_config_t panel_config = {};
-        panel_config.reset_gpio_num = GPIO_NUM_48;
-        panel_config.flags.reset_active_high = 1,
+        panel_config.reset_gpio_num = GPIO_NUM_20;
+        // panel_config.flags.reset_active_high = 1,
         panel_config.rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB;
         panel_config.bits_per_pixel = 16;
-        panel_config.vendor_config = (void *)&vendor_config;
-        ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(panel_io, &panel_config, &panel));
+        // panel_config.vendor_config = (void *)&vendor_config;
+        ESP_ERROR_CHECK(esp_lcd_new_panel_st7735s(panel_io, &panel_config, &panel));
         
         esp_lcd_panel_reset(panel);
         esp_lcd_panel_init(panel);
-        esp_lcd_panel_invert_color(panel, false);
+        esp_lcd_panel_invert_color(panel, true);
         esp_lcd_panel_swap_xy(panel, DISPLAY_SWAP_XY);
         esp_lcd_panel_mirror(panel, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y);
         esp_lcd_panel_disp_on_off(panel, true);
@@ -132,7 +133,7 @@ public:
     EspBox3Board() : boot_button_(BOOT_BUTTON_GPIO) {
         InitializeI2c();
         InitializeSpi();
-        InitializeIli9341Display();
+        InitializeSt7735sDisplay();
         InitializeButtons();
         InitializeIot();
     }
