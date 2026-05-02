@@ -295,7 +295,6 @@ void McpServer::AddUserOnlyTools() {
                 settings.SetString("download_url", url);
                 return true;
             });
-    }
 }
 
 void McpServer::AddTool(McpTool* tool) {
